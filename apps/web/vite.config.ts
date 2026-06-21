@@ -14,6 +14,11 @@ export default defineConfig({
       "/api": {
         target: process.env.VITE_API_BASE_URL ?? "http://localhost:8787",
         changeOrigin: true,
+        headers: {
+          "X-Auth-Request-Email": process.env.DEV_AUTH_EMAIL ?? "dev@bettertool.local",
+          "X-Auth-Request-User": process.env.DEV_AUTH_USER ?? "dev",
+          "X-Auth-Request-Groups": process.env.DEV_AUTH_GROUPS ?? "admin",
+        },
       },
     },
   },

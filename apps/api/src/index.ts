@@ -1,3 +1,5 @@
+import "./env.js";
+
 import { serve } from "@hono/node-server";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
