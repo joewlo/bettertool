@@ -7,6 +7,7 @@ import "./components/container";
 import "./components/table";
 import "./components/modal";
 import "./components/form";
+import "./components/grid";
 import "./components/checkbox";
 import "./components/toggle";
 import "./components/radiogroup";
