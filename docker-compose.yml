@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: bettertool
+      POSTGRES_PASSWORD: bettertool
+      POSTGRES_DB: bettertool
+    ports:
+      - "5432:5432"
+    volumes:
+      - bettertool_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bettertool"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://bettertool:bettertool@postgres:5432/bettertool
+    ports:
+      - "8787:8787"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      VITE_API_BASE_URL: http://localhost:8787
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  bettertool_pg:
