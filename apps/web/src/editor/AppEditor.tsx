@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ComponentPalette } from "./ComponentPalette";
+import { BindingDebuggerPanel } from "./BindingDebuggerPanel";
 import { EditorCanvas } from "./EditorCanvas";
 import { Inspector } from "./Inspector";
 import { QueriesPanel } from "./QueriesPanel";
@@ -26,9 +27,10 @@ export function AppEditor({ store }: { store: EditorStore }) {
         <aside className="flex w-72 shrink-0 flex-col border-r">
           <Tabs defaultValue="components" className="flex flex-1 flex-col overflow-hidden">
             <div className="px-3 pt-3">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="components">Components</TabsTrigger>
                 <TabsTrigger value="queries">Queries</TabsTrigger>
+                <TabsTrigger value="debug">Debug</TabsTrigger>
               </TabsList>
             </div>
             <TabsContent value="components" className="mt-3 min-h-0 flex-1 overflow-hidden">
@@ -40,6 +42,9 @@ export function AppEditor({ store }: { store: EditorStore }) {
             </TabsContent>
             <TabsContent value="queries" className="mt-3 min-h-0 flex-1 overflow-hidden">
               <QueriesPanel store={store} />
+            </TabsContent>
+            <TabsContent value="debug" className="mt-3 min-h-0 flex-1 overflow-hidden">
+              <BindingDebuggerPanel store={store} engine={engine} />
             </TabsContent>
           </Tabs>
         </aside>

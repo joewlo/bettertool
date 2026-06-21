@@ -104,7 +104,7 @@ export function Runtime({ definition: _definition, page, mode, nodeWrapper, sele
   const rerun = useCallback(() => {
     if (runningRef.current) return;
     runningRef.current = true;
-    void engine.runBindings(asNodes(pageRef.current.components)).finally(() => {
+    void engine.runAffectedBindings().finally(() => {
       runningRef.current = false;
     });
   }, [engine]);
