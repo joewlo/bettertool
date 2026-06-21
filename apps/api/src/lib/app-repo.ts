@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { getDb } from "@bettertool/db";
 import { appRevisions, apps } from "@bettertool/db";
@@ -138,4 +138,63 @@ export async function deleteApp(workspaceId: string, id: string): Promise<void> 
     .where(and(eq(apps.id, id), eq(apps.workspaceId, workspaceId)))
     .returning({ id: apps.id });
   if (result.length === 0) throw new Error("not found");
+}
+
+export type RevisionListRow = {
+  id: string;
+  appId: string;
+  createdAt: Date;
+  createdById: string | null;
+};
+
+export type RevisionDetailRow = {
+  id: string;
+  appId: string;
+  definition: unknown;
+  createdAt: Date;
+};
+
+export async function listRevisions(
+  workspaceId: string,
+  appId: string,
+): Promise<RevisionListRow[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: appRevisions.id,
+      appId: appRevisions.appId,
+      createdAt: appRevisions.createdAt,
+      createdById: appRevisions.createdById,
+    })
+    .from(appRevisions)
+    .innerJoin(apps, eq(appRevisions.appId, apps.id))
+    .where(and(eq(appRevisions.appId, appId), eq(apps.workspaceId, workspaceId)))
+    .orderBy(desc(appRevisions.createdAt))
+    .limit(50);
+  return rows;
+}
+
+export async function getRevision(
+  workspaceId: string,
+  appId: string,
+  revisionId: string,
+): Promise<RevisionDetailRow | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      id: appRevisions.id,
+      appId: appRevisions.appId,
+      definition: appRevisions.definition,
+      createdAt: appRevisions.createdAt,
+    })
+    .from(appRevisions)
+    .innerJoin(apps, eq(appRevisions.appId, apps.id))
+    .where(
+      and(
+        eq(appRevisions.id, revisionId),
+        eq(appRevisions.appId, appId),
+        eq(apps.workspaceId, workspaceId),
+      ),
+    );
+  return row ?? null;
 }

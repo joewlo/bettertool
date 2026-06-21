@@ -27,17 +27,60 @@ function isDescendant(components: unknown[], ancestorId: string, targetId: strin
   return containsId(ancestor.children, targetId);
 }
 
-function resolveDropTarget(
+// A parent lays out children horizontally only when it is a container whose
+// direction prop is "row". Root and column containers are vertical.
+function parentIsHorizontal(components: unknown[], parentId: string | null): boolean {
+  if (parentId === null) return false;
+  const parent = findNodeById(components, parentId);
+  if (!parent) return false;
+  return parent.props.direction === "row";
+}
+
+// Compute a precise drop target when `over` is a real component (sortable).
+// Determines insert-before vs insert-after by comparing the dragged item's
+// translated rect center to the over item's rect center along the parent's
+// primary axis. For moves within the same parent, the active node's removal
+// shifts later siblings left by one, so we compensate the computed index.
+function resolveSortableTarget(
+  e: DragEndEvent,
   overId: string,
   components: unknown[],
+  isPalette: boolean,
+  activeId: string,
 ): { parentId: string | null; index: number | undefined } {
-  if (overId === "root") return { parentId: null, index: undefined };
-  if (overId.startsWith("container-")) {
-    return { parentId: overId.slice("container-".length), index: undefined };
+  const parentInfo = findComponentParent(components, overId);
+  if (!parentInfo) return { parentId: null, index: undefined };
+  const { parent, index: overIdx } = parentInfo;
+  const parentId = parent?.id ?? null;
+  const horizontal = parentIsHorizontal(components, parentId);
+
+  const overRect = e.over?.rect;
+  const activeRect = e.active.rect.current.translated;
+  let before = true;
+  if (overRect && activeRect) {
+    if (horizontal) {
+      const overCenter = overRect.left + overRect.width / 2;
+      const activeCenter = activeRect.left + activeRect.width / 2;
+      before = activeCenter < overCenter;
+    } else {
+      const overCenter = overRect.top + overRect.height / 2;
+      const activeCenter = activeRect.top + activeRect.height / 2;
+      before = activeCenter < overCenter;
+    }
   }
-  const parent = findComponentParent(components, overId);
-  if (parent) return { parentId: parent.parent?.id ?? null, index: parent.index };
-  return { parentId: null, index: undefined };
+
+  let insertIdx = before ? overIdx : overIdx + 1;
+
+  if (!isPalette) {
+    const activeParent = findComponentParent(components, activeId);
+    if (activeParent && (activeParent.parent?.id ?? null) === parentId) {
+      const activeIdx = activeParent.index;
+      if (activeIdx < overIdx) insertIdx -= 1;
+    }
+  }
+
+  if (insertIdx < 0) insertIdx = 0;
+  return { parentId, index: insertIdx };
 }
 
 export function useCanvasDnd(store: EditorStore) {
@@ -56,12 +99,21 @@ export function useCanvasDnd(store: EditorStore) {
     const page = state.definition.pages.find((p) => p.id === state.currentPageId);
     if (!page) return;
 
-    const target = resolveDropTarget(overId, page.components);
     const activeData = active.data.current as
       | { source?: string; componentType?: string }
       | undefined;
+    const isPalette = activeId.startsWith("palette-") || activeData?.source === "palette";
 
-    if (activeId.startsWith("palette-") || activeData?.source === "palette") {
+    let target: { parentId: string | null; index: number | undefined };
+    if (overId === "root") {
+      target = { parentId: null, index: undefined };
+    } else if (overId.startsWith("container-")) {
+      target = { parentId: overId.slice("container-".length), index: undefined };
+    } else {
+      target = resolveSortableTarget(e, overId, page.components, isPalette, activeId);
+    }
+
+    if (isPalette) {
       const componentType = activeData?.componentType ?? activeId.replace(/^palette-/, "");
       state.addComponent(componentType, target.parentId, target.index);
       return;

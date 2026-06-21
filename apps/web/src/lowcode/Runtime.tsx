@@ -28,12 +28,17 @@ export interface RuntimeProps {
   onEngine?: (engine: EngineState) => void;
 }
 
-function buildInitialModel(page: Page): Partial<ModelSnapshot> {
+function readUrlParams(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  return Object.fromEntries(new URLSearchParams(window.location.search).entries());
+}
+
+function buildInitialModel(page: Page, params: Record<string, string>): Partial<ModelSnapshot> {
   const queries: Record<string, QueryState> = {};
   for (const q of page.queries) {
     queries[q.name] = { data: undefined, isFetching: false, error: null, lastRun: null };
   }
-  return { queries, components: {}, globals: { params: {}, currentUser: null } };
+  return { queries, components: {}, globals: { params, currentUser: null } };
 }
 
 function resolvePath(path: string, model: ModelSnapshot): unknown {
@@ -75,7 +80,10 @@ function showToast(message: string, variant: "info" | "success" | "warning" | "e
 export function Runtime({ definition: _definition, page, mode, nodeWrapper, selectedId, onSelect, onRemove, onEngine }: RuntimeProps) {
   const engineRef = useRef<EngineState | null>(null);
   if (engineRef.current === null) {
-    engineRef.current = createEngine(buildInitialModel(page));
+    // Read the browser URL search params once at mount so bindings can
+    // reference {{globals.params.foo}} for ?foo=bar. The Runtime is keyed by
+    // page id (it remounts on page change), so re-reading on mount is fine.
+    engineRef.current = createEngine(buildInitialModel(page, readUrlParams()));
   }
   const engine = engineRef.current;
 

@@ -183,3 +183,105 @@ export function useRunPostgresQuery() {
       api.post<PgResponse>(`/api/proxy/postgres/${resourceId}`, query),
   });
 }
+
+export type RevisionRow = {
+  id: string;
+  appId: string;
+  createdAt: string;
+  createdById: string | null;
+};
+
+export type RevisionDetail = {
+  id: string;
+  appId: string;
+  definition: unknown;
+  createdAt: string;
+};
+
+export function useAppRevisions(appId: string | undefined) {
+  return useQuery({
+    queryKey: ["app", appId, "revisions"],
+    queryFn: () => api.get<RevisionRow[]>(`/api/apps/${appId}/revisions`),
+    enabled: !!appId,
+  });
+}
+
+export function useRevision(appId: string | undefined, revisionId: string | undefined) {
+  return useQuery({
+    queryKey: ["app", appId, "revision", revisionId],
+    queryFn: () =>
+      api.get<RevisionDetail>(`/api/apps/${appId}/revisions/${revisionId}`),
+    enabled: !!revisionId,
+  });
+}
+
+export type GraphqlSchema = {
+  queryType: { name: string } | null;
+  mutationType: { name: string } | null;
+  subscriptionType: { name: string } | null;
+  types: GraphqlType[];
+  directives?: unknown[];
+};
+
+export type GraphqlType = {
+  kind:
+    | "OBJECT"
+    | "INTERFACE"
+    | "UNION"
+    | "ENUM"
+    | "INPUT_OBJECT"
+    | "SCALAR"
+    | "LIST"
+    | "NON_NULL";
+  name: string | null;
+  description?: string | null;
+  fields?: GraphqlField[] | null;
+  inputFields?: (GraphqlField & { defaultValue?: string | null })[] | null;
+  enumValues?: { name: string; description?: string | null }[] | null;
+  interfaces?: GraphqlType[] | null;
+  ofType?: GraphqlType | null;
+};
+
+export type GraphqlField = {
+  name: string;
+  description?: string | null;
+  type: GraphqlTypeRef;
+  args: (GraphqlField & { defaultValue?: string | null })[];
+};
+
+export type GraphqlTypeRef = {
+  kind:
+    | "LIST"
+    | "NON_NULL"
+    | "OBJECT"
+    | "SCALAR"
+    | "ENUM"
+    | "INTERFACE"
+    | "UNION"
+    | "INPUT_OBJECT";
+  name: string | null;
+  ofType?: GraphqlTypeRef | null;
+};
+
+export function useIntrospectGraphql() {
+  return useMutation({
+    mutationFn: ({ resourceId }: { resourceId: string }) =>
+      api.post<RestResponse>(`/api/proxy/graphql/${resourceId}/introspect`, {}),
+  });
+}
+
+export function extractSchema(responseData: unknown): GraphqlSchema | null {
+  if (!responseData || typeof responseData !== "object" || Array.isArray(responseData)) {
+    return null;
+  }
+  const outer = responseData as Record<string, unknown>;
+  const data = outer.data;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return null;
+  }
+  const schema = (data as Record<string, unknown>).__schema;
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+    return null;
+  }
+  return schema as GraphqlSchema;
+}

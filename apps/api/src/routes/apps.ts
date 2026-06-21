@@ -8,7 +8,9 @@ import {
   createApp,
   deleteApp,
   getApp,
+  getRevision,
   listApps,
+  listRevisions,
   updateApp,
 } from "../lib/app-repo.js";
 import { upsertUser } from "../lib/user-repo.js";
@@ -88,6 +90,39 @@ appsRoute.delete("/:id", async (c) => {
     const { workspaceId } = await upsertUser(c.get("user"));
     await deleteApp(workspaceId, c.req.param("id"));
     return c.body(null, 204);
+  } catch (err) {
+    if ((err as Error).message === "not found") {
+      return c.json({ error: "not_found" }, 404);
+    }
+    return c.json({ error: "internal", message: (err as Error).message }, 500);
+  }
+});
+
+appsRoute.get("/:id/revisions", async (c) => {
+  try {
+    const { workspaceId } = await upsertUser(c.get("user"));
+    const app = await getApp(workspaceId, c.req.param("id"));
+    if (!app) return c.json({ error: "not_found" }, 404);
+    const rows = await listRevisions(workspaceId, app.id);
+    return c.json(rows);
+  } catch (err) {
+    if ((err as Error).message === "not found") {
+      return c.json({ error: "not_found" }, 404);
+    }
+    return c.json({ error: "internal", message: (err as Error).message }, 500);
+  }
+});
+
+appsRoute.get("/:id/revisions/:revisionId", async (c) => {
+  try {
+    const { workspaceId } = await upsertUser(c.get("user"));
+    const row = await getRevision(
+      workspaceId,
+      c.req.param("id"),
+      c.req.param("revisionId"),
+    );
+    if (!row) return c.json({ error: "not_found" }, 404);
+    return c.json(row);
   } catch (err) {
     if ((err as Error).message === "not found") {
       return c.json({ error: "not_found" }, 404);

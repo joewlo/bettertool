@@ -23,6 +23,92 @@ export const proxyRoute = new Hono();
 const MAX_BYTES = 5 * 1024 * 1024;
 const TIMEOUT_MS = 30_000;
 
+const INTROSPECTION_QUERY = `query IntrospectionQuery {
+  __schema {
+    queryType { name }
+    mutationType { name }
+    subscriptionType { name }
+    types {
+      ...FullType
+    }
+    directives {
+      name
+      description
+      locations
+      args {
+        ...InputValue
+      }
+    }
+  }
+}
+
+fragment FullType on __Type {
+  kind
+  name
+  description
+  fields(includeDeprecated: true) {
+    name
+    description
+    args {
+      ...InputValue
+    }
+    type {
+      ...TypeRef
+    }
+    isDeprecated
+    deprecationReason
+  }
+  inputFields {
+    ...InputValue
+  }
+  interfaces {
+    ...TypeRef
+  }
+  enumValues(includeDeprecated: true) {
+    name
+    description
+    isDeprecated
+    deprecationReason
+  }
+  possibleTypes {
+    ...TypeRef
+  }
+}
+
+fragment InputValue on __InputValue {
+  name
+  description
+  type {
+    ...TypeRef
+  }
+  defaultValue
+}
+
+fragment TypeRef on __Type {
+  kind
+  name
+  ofType {
+    kind
+    name
+    ofType {
+      kind
+      name
+      ofType {
+        kind
+        name
+        ofType {
+          kind
+          name
+          ofType {
+            kind
+            name
+          }
+        }
+      }
+    }
+  }
+}`;
+
 export type RestResponse = {
   status: number;
   headers: Record<string, string>;
@@ -269,6 +355,30 @@ proxyRoute.post(
     }
   },
 );
+
+proxyRoute.post("/graphql/:resourceId/introspect", async (c) => {
+  try {
+    const { workspaceId } = await upsertUser(c.get("user"));
+    const resourceId = c.req.param("resourceId");
+    const resource = await getResource(workspaceId, resourceId);
+    if (resource.type !== "graphql") {
+      return c.json({ error: "bad_request", message: "resource is not a GraphQL resource" }, 400);
+    }
+    const config = resource.config as GraphqlResourceConfig;
+    const result = await runGraphql(config, {
+      type: "graphql",
+      query: INTROSPECTION_QUERY,
+      variables: "",
+      headers: {},
+    });
+    return c.json(result);
+  } catch (err) {
+    if ((err as Error).message === "not found") {
+      return c.json({ error: "not_found" }, 404);
+    }
+    return c.json({ error: "internal", message: (err as Error).message }, 500);
+  }
+});
 
 proxyRoute.post(
   "/postgres/:resourceId",

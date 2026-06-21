@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Eye, Redo2, Undo2, Upload } from "lucide-react";
+import { ArrowLeft, Download, Eye, History, Redo2, Undo2, Upload } from "lucide-react";
 
 import type { AppDefinition } from "@bettertool/shared";
 
@@ -11,6 +11,7 @@ import { useApp, useUpdateApp } from "@/lib/queries";
 
 import { AppEditor, useAppEditorStore, useEditorHistory } from "@/editor/AppEditor";
 import { exportAppDefinition, importAppDefinition } from "@/editor/import-export";
+import { RevisionsDialog } from "@/editor/RevisionsDialog";
 import { useEditorStore } from "@/editor/editor-store";
 
 function definitionEqual(a: AppDefinition, b: AppDefinition): boolean {
@@ -147,6 +148,19 @@ function AppEditorPageInner({ appId }: { appId: string }) {
     [store, history],
   );
 
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const handleRestoreRevision = useCallback(
+    (def: AppDefinition) => {
+      // Restoring an old revision makes the working definition dirty vs the
+      // last save — intentionally do NOT update lastSavedRef, so the user
+      // must Save to persist the restored version.
+      store.getState().replaceDefinition(def);
+      history.reset(def);
+      forceDirty((n) => n + 1);
+    },
+    [store, history],
+  );
+
   if (isLoading) {
     return <div className="py-12 text-center text-muted-foreground">Loading app...</div>;
   }
@@ -229,6 +243,15 @@ function AppEditorPageInner({ appId }: { appId: string }) {
             <Download className="h-4 w-4" />
             Export
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setHistoryOpen(true)}
+            title="Revision history"
+          >
+            <History className="h-4 w-4" />
+            History
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to={`/apps/${app.id}`}>
               <Eye />
@@ -253,6 +276,13 @@ function AppEditorPageInner({ appId }: { appId: string }) {
         accept=".json,application/json"
         className="hidden"
         onChange={handleImportFile}
+      />
+
+      <RevisionsDialog
+        appId={appId}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        onRestore={handleRestoreRevision}
       />
 
       <AppEditor store={store} />
