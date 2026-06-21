@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { Plus, X } from "lucide-react";
+import { GripHorizontal, Plus, X } from "lucide-react";
 
 import type { EngineState } from "@bettertool/reactive";
 
@@ -126,8 +126,9 @@ export function EditorCanvas({ store, onEngine }: { store: EditorStore; onEngine
         <div className="p-4">
           <CanvasRoot>
             {page.components.length === 0 ? (
-              <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
-                Drag a component from the left panel to start building.
+              <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                <GripHorizontal className="h-10 w-10 text-muted-foreground/30" />
+                <p>Drag a component from the left panel to start building.</p>
               </div>
             ) : (
               <Runtime

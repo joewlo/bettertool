@@ -31,18 +31,20 @@ registerComponent({
     { name: "showBorder", label: "Show Border", type: "boolean", default: false },
     { name: "background", label: "Background", type: "color", default: "" },
   ],
-  render: ({ resolved, children }) => {
+  render: ({ resolved, children, isEditor, isSelected }) => {
     const direction = (resolved.direction as string) ?? "column";
     const gap = (resolved.gap as number) ?? 12;
     const padding = (resolved.padding as number) ?? 12;
     const showBorder = Boolean(resolved.showBorder);
     const background = (resolved.background as string) ?? "";
+    const showGuide = isEditor && !isSelected && !showBorder;
     return (
       <div
         className={cn(
-          "flex min-h-[40px] min-w-[60px] rounded-md",
+          "flex min-h-[44px] min-w-[80px] rounded-md",
           direction === "row" ? "flex-row flex-wrap" : "flex-col",
           showBorder && "border border-dashed border-border",
+          showGuide && "border-2 border-dashed border-muted-foreground/15",
         )}
         style={{ gap, padding, background: background || undefined }}
       >

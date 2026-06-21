@@ -214,6 +214,7 @@ function safeStringify(v: unknown): string {
 const ACTION_TYPES: { type: EventAction["type"]; label: string }[] = [
   { type: "runQuery", label: "Run query" },
   { type: "setValue", label: "Set value" },
+  { type: "setVariable", label: "Set variable" },
   { type: "showAlert", label: "Show alert" },
   { type: "navigate", label: "Navigate" },
   { type: "openModal", label: "Open modal" },
@@ -226,6 +227,8 @@ function defaultAction(type: EventAction["type"]): EventAction {
       return { type: "runQuery", queryId: "" };
     case "setValue":
       return { type: "setValue", componentId: "", property: "value", value: "" };
+    case "setVariable":
+      return { type: "setVariable", variable: "", value: "" };
     case "showAlert":
       return { type: "showAlert", message: "", variant: "info" };
     case "navigate":
@@ -299,6 +302,22 @@ function ActionEditor({
             placeholder="property (e.g. value)"
             value={action.property}
             onChange={(e) => onChange({ ...action, property: e.target.value })}
+          />
+          <Input
+            className="h-8 font-mono text-xs"
+            placeholder="value or {{components.x.value}}"
+            value={action.value}
+            onChange={(e) => onChange({ ...action, value: e.target.value })}
+          />
+        </>
+      )}
+      {action.type === "setVariable" && (
+        <>
+          <Input
+            className="h-8 font-mono text-xs"
+            placeholder="variable name"
+            value={action.variable}
+            onChange={(e) => onChange({ ...action, variable: e.target.value })}
           />
           <Input
             className="h-8 font-mono text-xs"

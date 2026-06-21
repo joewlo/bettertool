@@ -69,6 +69,7 @@ export type QueryRuntime = z.infer<typeof queryRuntimeSchema>;
 export const eventActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("runQuery"), queryId: z.string() }),
   z.object({ type: z.literal("setValue"), componentId: z.string(), property: z.string(), value: z.string() }),
+  z.object({ type: z.literal("setVariable"), variable: z.string(), value: z.string() }),
   z.object({ type: z.literal("navigate"), pageId: z.string() }),
   z.object({ type: z.literal("openModal"), componentId: z.string() }),
   z.object({ type: z.literal("closeModal"), componentId: z.string() }),
@@ -106,11 +107,20 @@ export type ComponentNode = {
   children: ComponentNode[];
 };
 
+export const variableSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(60),
+  type: z.enum(["string", "number", "boolean", "json"]).default("string"),
+  defaultValue: z.string().default(""),
+});
+export type VariableDef = z.infer<typeof variableSchema>;
+
 export const pageSchema = z.object({
   id: z.string(),
   name: z.string(),
   queries: z.array(queryRuntimeSchema).default([]),
   components: z.array(componentNodeSchema).default([]),
+  variables: z.array(variableSchema).default([]),
 });
 export type Page = z.infer<typeof pageSchema>;
 

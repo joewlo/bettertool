@@ -2,6 +2,7 @@ export interface ModelSnapshot {
   queries: Record<string, QueryState>;
   components: Record<string, ComponentState>;
   globals: Record<string, unknown>;
+  variables: Record<string, unknown>;
 }
 
 export interface QueryState {

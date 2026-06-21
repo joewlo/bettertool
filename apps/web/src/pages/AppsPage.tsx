@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { MoreHorizontal, Plus, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -150,16 +150,21 @@ function AppCard({ app }: { app: AppRow }) {
   const navigate = useNavigate();
 
   return (
-    <Card className="group relative">
-      <CardHeader>
+    <Card className="group relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-1">
-            <Link to={`/apps/${app.id}`}>
-              <CardTitle className="truncate hover:underline">{app.name}</CardTitle>
+          <div className="min-w-0 space-y-1.5">
+            <Link to={`/apps/${app.id}`} className="flex items-start gap-2">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Package className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <CardTitle className="truncate text-base hover:underline">{app.name}</CardTitle>
+                <CardDescription className="line-clamp-2 min-h-[1.25rem] text-xs">
+                  {app.description || <span className="italic text-muted-foreground/60">No description</span>}
+                </CardDescription>
+              </div>
             </Link>
-            <CardDescription className="line-clamp-2 min-h-[2.5rem]">
-              {app.description || "No description"}
-            </CardDescription>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -184,8 +189,12 @@ function AppCard({ app }: { app: AppRow }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <p className="text-xs text-muted-foreground">Created {formatDate(app.createdAt)}</p>
       </CardHeader>
+      <div className="border-t px-6 py-2">
+        <p className="text-[11px] text-muted-foreground">
+          Created {formatDate(app.createdAt)}
+        </p>
+      </div>
     </Card>
   );
 }

@@ -3,6 +3,7 @@ import type { EventAction } from "@bettertool/shared";
 export interface ActionContext {
   runQuery: (queryId: string) => Promise<void>;
   setValue: (componentId: string, property: string, value: unknown) => void;
+  setVariable: (name: string, value: unknown) => void;
   navigate: (pageId: string) => void;
   openModal: (componentId: string) => void;
   closeModal: (componentId: string) => void;
@@ -24,6 +25,9 @@ export async function dispatchActions(
         // the current model before mutating component state. A value with no `{{`
         // is treated as a literal string by the binding parser in the ctx impl.
         ctx.setValue(action.componentId, action.property, action.value);
+        break;
+      case "setVariable":
+        ctx.setVariable(action.variable, action.value);
         break;
       case "navigate":
         ctx.navigate(action.pageId);

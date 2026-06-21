@@ -38,7 +38,15 @@ function buildInitialModel(page: Page, params: Record<string, string>): Partial<
   for (const q of page.queries) {
     queries[q.name] = { data: undefined, isFetching: false, error: null, lastRun: null };
   }
-  return { queries, components: {}, globals: { params, currentUser: null } };
+  const variables: Record<string, unknown> = {};
+  for (const v of page.variables ?? []) {
+    try {
+      variables[v.name] = v.defaultValue ? JSON.parse(v.defaultValue) : v.defaultValue;
+    } catch {
+      variables[v.name] = v.defaultValue;
+    }
+  }
+  return { queries, components: {}, globals: { params, currentUser: null }, variables };
 }
 
 function resolvePath(path: string, model: ModelSnapshot): unknown {
@@ -166,6 +174,12 @@ export function Runtime({ definition: _definition, page, mode, nodeWrapper, sele
       },
       showAlert: (message: string, variant: "info" | "success" | "warning" | "error") => {
         showToast(message, variant);
+      },
+      setVariable: (name: string, value: unknown) => {
+        const resolved =
+          typeof value === "string" ? resolveValueExpr(value, engine.model) : value;
+        engine.setVariable(name, resolved);
+        rerun();
       },
     }),
     [engine, rerun, executeQuery],

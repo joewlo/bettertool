@@ -8,6 +8,7 @@ import {
   type Event,
   type Page,
   type QueryRuntime,
+  type VariableDef,
 } from "@bettertool/shared";
 
 import { getComponentDefinition } from "@/lowcode/registry";
@@ -33,6 +34,7 @@ export interface EditorState {
   addQuery: (pageId: string, query: QueryRuntime) => void;
   updateQuery: (pageId: string, queryId: string, patch: Partial<QueryRuntime>) => void;
   removeQuery: (pageId: string, queryId: string) => void;
+  updatePageVariables: (pageId: string, variables: VariableDef[]) => void;
   replaceDefinition: (definition: AppDefinition) => void;
 }
 
@@ -133,7 +135,7 @@ export function createEditorStore(initialDefinition: unknown): EditorStore {
     const pageId = crypto.randomUUID();
     definition = {
       version: 1,
-      pages: [{ id: pageId, name: "Page 1", queries: [], components: [] }],
+      pages: [{ id: pageId, name: "Page 1", queries: [], components: [], variables: [] }],
     };
   }
   const currentPageId = definition.pages[0]!.id;
@@ -246,7 +248,7 @@ export function createEditorStore(initialDefinition: unknown): EditorStore {
       set((s) => ({
         definition: {
           ...s.definition,
-          pages: [...s.definition.pages, { id, name, queries: [], components: [] }],
+          pages: [...s.definition.pages, { id, name, queries: [], components: [], variables: [] }],
         },
         currentPageId: id,
         selectedComponentId: null,
@@ -296,6 +298,11 @@ export function createEditorStore(initialDefinition: unknown): EditorStore {
           queries: p.queries.filter((q) => q.id !== queryId),
         })),
         selectedQueryId: s.selectedQueryId === queryId ? null : s.selectedQueryId,
+      })),
+
+    updatePageVariables: (pageId, variables) =>
+      set((s) => ({
+        definition: updatePage(s.definition, pageId, (p) => ({ ...p, variables })),
       })),
 
     replaceDefinition: (definition) => {

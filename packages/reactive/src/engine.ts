@@ -12,12 +12,14 @@ export interface EngineState {
   setQueryState: (name: string, state: Partial<QueryState>) => void;
   setComponentState: (componentId: string, property: string, value: unknown) => void;
   setComponentStateBatch: (componentId: string, values: Record<string, unknown>) => void;
+  setVariable: (name: string, value: unknown) => void;
   setGlobals: (g: Record<string, unknown>) => void;
   runBindings: (components: ComponentNode[]) => Promise<void>;
   runAffectedBindings: () => Promise<void>;
   runBinding: (componentId: string, prop: string, raw: unknown) => Promise<BindingResult>;
   getQueryState: (name: string) => QueryState | undefined;
   getComponentState: (componentId: string) => ComponentState | undefined;
+  getVariable: (name: string) => unknown;
   dispose: () => void;
 }
 
@@ -75,6 +77,7 @@ export function createEngine(initialModel?: Partial<ModelSnapshot>): EngineState
     queries: initialModel?.queries ?? {},
     components: initialModel?.components ?? {},
     globals: initialModel?.globals ?? {},
+    variables: initialModel?.variables ?? {},
   };
 
   // Fine-grained dependency tracking state. These closure variables persist
@@ -152,6 +155,18 @@ export function createEngine(initialModel?: Partial<ModelSnapshot>): EngineState
       }
       set((s) => ({ model: { ...s.model, globals: { ...s.model.globals, ...g } } }));
     },
+
+    setVariable: (name, value) => {
+      recordChanged(`variables.${name}`);
+      set((s) => ({
+        model: {
+          ...s.model,
+          variables: { ...s.model.variables, [name]: value },
+        },
+      }));
+    },
+
+    getVariable: (name) => get().model.variables[name],
 
     runBindings: async (components) => {
       // Full re-evaluation: rebuild the dependency map + component index and

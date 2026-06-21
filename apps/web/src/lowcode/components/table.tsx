@@ -80,20 +80,20 @@ registerComponent({
       <div className="overflow-hidden rounded-md border">
         <div className="overflow-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50">
+            <thead className="bg-muted/70">
               <tr>
                 {columns.map((c) => (
-                  <th key={c.key} className="px-3 py-2 text-left font-medium">
+                  <th key={c.key} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {c.header}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y">
               {pageRows.map((row, i) => (
-                <tr key={i} className="border-t">
+                <tr key={i} className="transition-colors hover:bg-muted/30 even:bg-muted/10">
                   {columns.map((c) => (
-                    <td key={c.key} className="px-3 py-2 align-top">
+                    <td key={c.key} className="px-3 py-2 align-top text-xs">
                       {formatCell((row as Record<string, unknown>)[c.key])}
                     </td>
                   ))}

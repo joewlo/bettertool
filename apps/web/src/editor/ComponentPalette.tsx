@@ -1,15 +1,23 @@
 import { useDraggable } from "@dnd-kit/core";
 import {
+  BarChart3,
   Box,
+  Calendar,
+  CheckSquare,
   Columns3,
   Database,
   FormInput,
+  GripHorizontal,
   Hash,
+  ListChecks,
   ListOrdered,
   Pilcrow,
+  Radio,
+  Split,
   Square,
   Table as TableIcon,
   ToggleLeft,
+  ToggleRight,
   Type,
 } from "lucide-react";
 
@@ -41,10 +49,18 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   textinput: FormInput,
   numberinput: Hash,
   select: ToggleLeft,
+  checkbox: CheckSquare,
+  toggle: ToggleRight,
+  radiogroup: Radio,
+  datepicker: Calendar,
+  multiselect: ListChecks,
   container: Box,
   table: TableIcon,
+  datagrid: Database,
   modal: Square,
   form: ListOrdered,
+  tabs: Split,
+  chart: BarChart3,
 };
 
 const FALLBACK_ICON = Columns3;

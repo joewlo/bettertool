@@ -31,7 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { GraphqlQueryEditor } from "@/components/query-editor/GraphqlQueryEditor";
 import { PostgresQueryEditor } from "@/components/query-editor/PostgresQueryEditor";
 import { RestQueryEditor } from "@/components/query-editor/RestQueryEditor";
-import { useResources } from "@/lib/queries";
+import { useCreateResource, useResources } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 import { useEditorStore, type EditorStore } from "./editor-store";
@@ -90,6 +90,33 @@ export function QueriesPanel({ store }: { store: EditorStore }) {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newResourceId, setNewResourceId] = useState<string | null>(null);
+
+  // On-the-fly resource creation
+  const createResource = useCreateResource();
+  const [showNewResource, setShowNewResource] = useState(false);
+  const [newResourceName, setNewResourceName] = useState("");
+  const [newResourceType, setNewResourceType] = useState<"rest" | "graphql" | "postgres">("rest");
+  const [creatingResource, setCreatingResource] = useState(false);
+
+  async function handleCreateResourceAndSelect() {
+    const name = newResourceName.trim();
+    if (!name) return;
+    setCreatingResource(true);
+    try {
+      const config =
+        newResourceType === "postgres"
+          ? { connectionString: "", ssl: false }
+          : { baseUrl: "", headers: {}, auth: { type: "none" } as const };
+      const res = await createResource.mutateAsync({ name, type: newResourceType, config });
+      setNewResourceId(res.id);
+      setShowNewResource(false);
+      setNewResourceName("");
+    } catch (err) {
+      // toast handled by useCreateResource's onError (if any) — or just silently fail
+    } finally {
+      setCreatingResource(false);
+    }
+  }
 
   if (!page) {
     return <div className="text-sm text-muted-foreground">No page selected.</div>;
@@ -268,7 +295,50 @@ export function QueriesPanel({ store }: { store: EditorStore }) {
                   ))}
                 </SelectContent>
               </Select>
+              <button
+                type="button"
+                className="text-xs text-primary hover:underline"
+                onClick={() => setShowNewResource(!showNewResource)}
+              >
+                {showNewResource ? "Cancel" : "+ Create new resource"}
+              </button>
             </div>
+            {showNewResource && (
+              <div className="space-y-2 rounded-md border border-dashed p-3">
+                <p className="text-xs font-medium text-muted-foreground">New resource</p>
+                <Input
+                  className="h-7 text-xs"
+                  placeholder="Resource name"
+                  value={newResourceName}
+                  onChange={(e) => setNewResourceName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateResourceAndSelect();
+                  }}
+                  autoFocus
+                />
+                <Select
+                  value={newResourceType}
+                  onValueChange={(v) => setNewResourceType(v as "rest" | "graphql" | "postgres")}
+                >
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rest">REST</SelectItem>
+                    <SelectItem value="graphql">GraphQL</SelectItem>
+                    <SelectItem value="postgres">Postgres</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  className="h-7 w-full text-xs"
+                  onClick={handleCreateResourceAndSelect}
+                  disabled={creatingResource || !newResourceName.trim()}
+                >
+                  {creatingResource ? "Creating..." : "Create resource"}
+                </Button>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               The editor adapts to the selected resource type (REST, GraphQL, or Postgres).
             </p>

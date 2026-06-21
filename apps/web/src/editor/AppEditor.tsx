@@ -13,6 +13,7 @@ import { BindingDebuggerPanel } from "./BindingDebuggerPanel";
 import { EditorCanvas } from "./EditorCanvas";
 import { Inspector } from "./Inspector";
 import { QueriesPanel } from "./QueriesPanel";
+import { VariablesPanel } from "./VariablesPanel";
 import { useCanvasDnd } from "./dnd-utils";
 import { createEditorStore, useEditorStore, type EditorStore } from "./editor-store";
 import { History } from "./undo";
@@ -47,6 +48,7 @@ export function AppEditor({ store }: { store: EditorStore }) {
               <BindingDebuggerPanel store={store} engine={engine} />
             </TabsContent>
           </Tabs>
+          <VariablesPanel store={store} />
         </aside>
 
         <EditorCanvas store={store} onEngine={setEngine} />
