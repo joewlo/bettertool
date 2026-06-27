@@ -46,7 +46,12 @@ registerComponent({
           gridTemplateColumns: columns,
           gap,
           padding,
-          background: background || undefined,
+          background:
+            isEditor && isSelected
+              ? `repeating-linear-gradient(0deg, var(--primary)/0.06 0px, var(--primary)/0.06 1px, transparent 1px, transparent ${gap}px), ` +
+                `repeating-linear-gradient(90deg, var(--primary)/0.06 0px, var(--primary)/0.06 1px, transparent 1px, transparent ${gap}px)` +
+                (background ? `, ${background}` : "")
+              : background || undefined,
         }}
       >
         {children}

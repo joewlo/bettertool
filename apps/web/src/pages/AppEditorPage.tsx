@@ -100,11 +100,30 @@ function AppEditorPageInner({ appId }: { appId: string }) {
     }
   };
 
-  // Undo/redo keyboard shortcuts.
+  // Keyboard shortcuts: undo/redo, save, delete, duplicate.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
-      if (!mod || e.key.toLowerCase() !== "z") return;
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+      const editing = tag === "input" || tag === "textarea" || tag === "select" || (document.activeElement as HTMLElement)?.isContentEditable;
+
+      if (mod && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSaveDefinition();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        const sel = store.getState().selectedComponentId;
+        if (sel) store.getState().duplicateComponent(sel);
+        return;
+      }
+      if (mod && e.key.toLowerCase() !== "z") return;
+      if ((e.key === "Delete" || e.key === "Backspace") && !editing) {
+        const sel = store.getState().selectedComponentId;
+        if (sel) store.getState().removeComponent(sel);
+        return;
+      }
       if (e.shiftKey) {
         e.preventDefault();
         history.redo();
@@ -115,7 +134,7 @@ function AppEditorPageInner({ appId }: { appId: string }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [history]);
+  }, [history, handleSaveDefinition, store]);
 
   const handleExport = useCallback(() => {
     const definition = store.getState().definition;

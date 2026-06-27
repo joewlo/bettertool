@@ -23,6 +23,7 @@ export interface EditorState {
   selectQuery: (id: string | null) => void;
   addComponent: (type: string, parentId?: string | null, index?: number) => string | null;
   removeComponent: (id: string) => void;
+  duplicateComponent: (id: string) => string | null;
   moveComponent: (id: string, newParentId: string | null, index: number) => void;
   updateComponentProps: (id: string, props: Record<string, unknown>) => void;
   updateComponentLayout: (id: string, layout: Partial<ComponentNode["layout"]>) => void;
@@ -46,6 +47,15 @@ function normalizeDefinition(def: unknown): AppDefinition {
     if (parsed.success) return parsed.data;
   }
   return { version: 1, pages: [] };
+}
+
+function deepClone(node: ComponentNode, newId: string): ComponentNode {
+  return {
+    ...node,
+    id: newId,
+    name: `${node.name} (copy)`,
+    children: node.children.map((c) => deepClone(c, crypto.randomUUID())),
+  };
 }
 
 function findNode(components: unknown[], id: string): ComponentNode | undefined {
@@ -179,6 +189,26 @@ export function createEditorStore(initialDefinition: unknown): EditorStore {
           selectedComponentId: s.selectedComponentId === id ? null : s.selectedComponentId,
         };
       }),
+
+    duplicateComponent: (id) => {
+      let newId: string | null = null;
+      set((s) => {
+        const page = s.definition.pages.find((p) => p.id === s.currentPageId);
+        if (!page) return {};
+        const node = findNode(page.components, id);
+        if (!node) return {};
+        const dup = deepClone(node, crypto.randomUUID());
+        const parent = findParent(page.components, id);
+        const idx = parent ? parent.index + 1 : undefined;
+        const components = insertIntoParent(page.components, parent?.parent?.id ?? null, dup, idx);
+        newId = dup.id;
+        return {
+          definition: updatePage(s.definition, page.id, (p) => ({ ...p, components })),
+          selectedComponentId: dup.id,
+        };
+      });
+      return newId;
+    },
 
     moveComponent: (id, newParentId, index) =>
       set((s) => {
